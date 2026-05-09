@@ -933,6 +933,22 @@ document.querySelectorAll('.fmt-btn').forEach(btn => {
   btn.addEventListener('click', () => applyFormat(btn.dataset.cmd));
 });
 
+// Keep browser formatting in sync with fmtState when cursor moves.
+// Without this, placing the cursor next to bold text causes the browser to
+// silently inherit that formatting even though no button is active.
+document.addEventListener('selectionchange', () => {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return;
+  if (!editor.contains(sel.anchorNode)) return;
+
+  for (const cmd of Object.keys(fmtState)) {
+    const browserOn = document.queryCommandState(cmd);
+    if (browserOn !== fmtState[cmd]) {
+      document.execCommand(cmd, false, null);
+    }
+  }
+});
+
 // ── Keyboard shortcuts ────────────────────────────────────────────────────────
 editor.addEventListener('keydown', e => {
   // Code block trigger: /language + Enter or Space
