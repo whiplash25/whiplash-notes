@@ -1,24 +1,55 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   style.css  –  Dark theme, rounded frameless window, sidebar, AOT toggle
+   style.css  –  Material Design 3 dark theme, rounded Nunito font
    ───────────────────────────────────────────────────────────────────────────── */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:            #1c1c1e;
-  --bg-toolbar:    #232325;
-  --bg-pill:       #2c2c2e;
-  --bg-pill-hover: #3a3a3c;
-  --bg-sidebar:    #1a1a1c;
-  --bg-note-hover: #2a2a2c;
-  --bg-note-active:#2f2f32;
-  --text:          #e8e8ea;
-  --text-dim:      #55555a;
-  --text-toolbar:  #aeaeb2;
-  --text-sidebar:  #c8c8ca;
-  --accent-green:  #30d158;
-  --border:        rgba(255,255,255,0.07);
-  --font:          'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif;
+  /* ── M3 Dark palette ────────────────────────────────────────────────────── */
+  --primary:               #EFB8C8;   /* Primary80   */
+  --on-primary:            #492532;   /* Primary20   */
+  --primary-container:     #633B48;   /* Primary30   */
+  --on-primary-container:  #FFD8E4;   /* Primary90   */
+
+  --secondary:             #E8C1BB;   /* Secondary80 */
+  --on-secondary:          #492A27;   /* Secondary20 */
+  --secondary-container:   #5D3F3B;   /* Secondary30 */
+  --on-secondary-container:#FFDAD5;   /* Secondary90 */
+
+  --tertiary:              #E4C18A;   /* Tertiary80  */
+  --on-tertiary:           #3E2E16;   /* Tertiary20  */
+  --tertiary-container:    #564527;   /* Tertiary30  */
+  --on-tertiary-container: #FFE0B2;   /* Tertiary90  */
+
+  --error:                 #F2B8B5;   /* Error80     */
+  --on-error:              #601410;   /* Error20     */
+  --error-container:       #8C1D18;   /* Error30     */
+  --on-error-container:    #F9DEDC;   /* Error90     */
+
+  --background:            #1C1B1F;   /* Neutral10   */
+  --on-background:         #E6E1E5;   /* Neutral90   */
+  --surface:               #1C1B1F;   /* Neutral10   */
+  --on-surface:            #E6E1E5;   /* Neutral90   */
+
+  --surface-variant:       #49454F;   /* N-Var30     */
+  --on-surface-variant:    #CAC4D0;   /* N-Var80     */
+  --outline:               #938F99;   /* N-Var60     */
+
+  /* ── Mapped to app tokens ───────────────────────────────────────────────── */
+  --bg:            var(--background);
+  --bg-toolbar:    #2B2930;
+  --bg-pill:       var(--surface-variant);
+  --bg-pill-hover: #564F5E;
+  --bg-sidebar:    #211F26;
+  --bg-note-hover: #332F38;
+  --bg-note-active:#3D3845;
+  --text:          var(--on-background);
+  --text-dim:      var(--outline);
+  --text-toolbar:  var(--on-surface-variant);
+  --text-sidebar:  var(--on-background);
+  --accent:        var(--primary);
+  --border:        rgba(147, 143, 153, 0.18);
+  --font:          'Nunito', 'Varela Round', 'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif;
   --radius-window: 12px;
   --radius-pill:    6px;
   --radius-btn:     5px;
@@ -39,22 +70,16 @@ html, body {
   border-radius: var(--radius-window);
   border:        1px solid var(--border);
   overflow:      hidden;
-  box-shadow:    0 8px 32px rgba(0,0,0,0.6);
+  box-shadow:    0 8px 32px rgba(0,0,0,0.55);
 }
 
-/* ── Drag handle ─────────────────────────────────────────────────────────────  */
-#drag-handle {
-  height: 5px; flex-shrink: 0;
-  -webkit-app-region: drag;
-  border-radius: var(--radius-window) var(--radius-window) 0 0;
-}
-
-/* ── Toolbar ─────────────────────────────────────────────────────────────────  */
+/* ── Toolbar (doubles as drag handle) ────────────────────────────────────────  */
 #toolbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 10px; gap: 8px;
+  padding: 8px 10px; gap: 8px;
   background:  var(--bg-toolbar);
   border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-window) var(--radius-window) 0 0;
   flex-shrink: 0;
   -webkit-app-region: drag;
 }
@@ -74,15 +99,15 @@ html, body {
   transition: background 0.12s, color 0.12s;
 }
 .icon-btn:hover  { background: var(--bg-pill-hover); color: var(--text); }
-.icon-btn:active { background: #48484a; }
+.icon-btn:active { background: var(--primary-container); color: var(--on-primary-container); }
 #btn-new span    { position: relative; top: -1px; }
 
 /* Active state for sidebar button */
-#btn-sidebar.active { background: var(--bg-pill-hover); color: var(--text); }
+#btn-sidebar.active { background: var(--primary-container); color: var(--on-primary-container); }
 
 /* Format pill */
 #cluster-format {
-  background: var(--bg-pill); border-radius: var(--radius-pill);
+  background: rgba(255,255,255,0.06); border-radius: var(--radius-pill);
   padding: 2px; gap: 1px;
 }
 .fmt-btn {
@@ -95,7 +120,7 @@ html, body {
   transition: background 0.12s, color 0.12s;
 }
 .fmt-btn:hover  { background: var(--bg-pill-hover); color: var(--text); }
-.fmt-btn:active, .fmt-btn.active { background: #48484a; color: var(--text); }
+.fmt-btn:active, .fmt-btn.active { background: var(--primary-container); color: var(--on-primary-container); }
 .fmt-btn b  { font-weight: 700; }
 .fmt-btn i  { font-style: italic; }
 .fmt-btn u  { text-decoration: underline; }
@@ -104,7 +129,7 @@ html, body {
 /* Font size input */
 #font-size {
   width: 46px; height: 28px;
-  background: var(--bg-pill); border: none; border-radius: var(--radius-btn);
+  background: rgba(255,255,255,0.06); border: none; border-radius: var(--radius-btn);
   color: var(--text); font-family: var(--font); font-size: 12px;
   text-align: center; outline: none; cursor: text;
   transition: background 0.12s;
@@ -113,8 +138,7 @@ html, body {
 #font-size::-webkit-inner-spin-button,
 #font-size::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-/* ── Search bar ──────────────────────────────────────────────────────────────
-   Slides in below the toolbar. Height:0 → closed, height:38px → open.       */
+/* ── Search bar ──────────────────────────────────────────────────────────────  */
 #search-bar {
   display:        flex;
   align-items:    center;
@@ -135,7 +159,7 @@ html, body {
 
 #search-input {
   flex:           1;
-  background:     var(--bg-pill);
+  background:     rgba(255,255,255,0.06);
   border:         none;
   border-radius:  var(--radius-btn);
   color:          var(--text);
@@ -174,22 +198,21 @@ html, body {
   flex-shrink:     0;
 }
 .search-nav-btn:hover  { background: var(--bg-pill-hover); color: var(--text); }
-.search-nav-btn:active { background: #48484a; }
+.search-nav-btn:active { background: var(--primary-container); }
 
 /* Active search button state */
-#btn-search.active { background: var(--bg-pill-hover); color: var(--text); }
+#btn-search.active { background: var(--primary-container); color: var(--on-primary-container); }
 
-/* ── Highlight marks ─────────────────────────────────────────────────────────
-   All matches: muted amber. The current active match: bright amber.         */
+/* ── Highlight marks (search) ────────────────────────────────────────────────  */
 mark.highlight {
-  background:     rgba(255, 200, 0, 0.25);
+  background:     rgba(239, 184, 200, 0.25);
   color:          inherit;
   border-radius:  2px;
   padding:        0 1px;
 }
 mark.highlight.active {
-  background:     rgba(255, 200, 0, 0.7);
-  color:          #1c1c1e;
+  background:     var(--primary);
+  color:          var(--on-primary);
   border-radius:  2px;
 }
 
@@ -201,16 +224,17 @@ mark.highlight.active {
 /* ── Editor ──────────────────────────────────────────────────────────────────  */
 #editor {
   flex: 1;
-  padding:     20px 24px 16px;
+  padding:     20px 28px 16px;
   color:       var(--text);
   font-family: var(--font); font-size: 14px; line-height: 1.75;
+  font-weight: 400;
   outline:     none;
   overflow-y:  auto; overflow-x: hidden;
   word-wrap:   break-word;
   user-select: text;
-  caret-color: #636366;
+  caret-color: var(--primary);
   white-space: pre-wrap;
-  min-width:   0;  /* flex child must not overflow */
+  min-width:   0;
 }
 #editor:empty::before {
   content: attr(data-placeholder);
@@ -219,15 +243,21 @@ mark.highlight.active {
 }
 #editor::-webkit-scrollbar       { width: 4px; }
 #editor::-webkit-scrollbar-track { background: transparent; }
-#editor::-webkit-scrollbar-thumb { background: #3a3a3c; border-radius: 2px; }
-#editor::-webkit-scrollbar-thumb:hover { background: #48484a; }
+#editor::-webkit-scrollbar-thumb { background: var(--surface-variant); border-radius: 2px; }
+#editor::-webkit-scrollbar-thumb:hover { background: var(--outline); }
 #editor b, #editor strong { font-weight: 700; }
 #editor i, #editor em     { font-style: italic; }
-#editor u                 { text-decoration: underline; }
-#editor s, #editor del    { text-decoration: line-through; }
+#editor u                 { text-decoration: underline; text-decoration-color: var(--primary); }
+#editor s, #editor del    { text-decoration: line-through; text-decoration-color: var(--outline); }
 
-/* ── Sidebar ─────────────────────────────────────────────────────────────────
-   Width:0 → closed, width:190px → open, animated with CSS transition.       */
+/* ── User highlight spans ────────────────────────────────────────────────────  */
+span.user-highlight {
+  border-radius: 3px;
+  padding: 0 2px;
+  margin: 0 -2px;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────────  */
 #sidebar {
   width: 0;
   overflow: hidden;
@@ -245,7 +275,7 @@ mark.highlight.active {
 
 #sidebar-header {
   padding:       10px 12px 6px;
-  font-family:   var(--font); font-size: 10px; font-weight: 600;
+  font-family:   var(--font); font-size: 10px; font-weight: 700;
   color:         var(--text-dim);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -258,9 +288,8 @@ mark.highlight.active {
 }
 #notes-list::-webkit-scrollbar       { width: 3px; }
 #notes-list::-webkit-scrollbar-track { background: transparent; }
-#notes-list::-webkit-scrollbar-thumb { background: #3a3a3c; border-radius: 2px; }
+#notes-list::-webkit-scrollbar-thumb { background: var(--surface-variant); border-radius: 2px; }
 
-/* Individual note item in the sidebar */
 .note-item {
   padding:       9px 12px 8px;
   cursor:        pointer;
@@ -272,7 +301,7 @@ mark.highlight.active {
 .note-item.active  { background: var(--bg-note-active); }
 
 .note-item-title {
-  font-family: var(--font); font-size: 11.5px; font-weight: 500;
+  font-family: var(--font); font-size: 11.5px; font-weight: 600;
   color:       var(--text-sidebar);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   line-height: 1.4;
@@ -289,8 +318,8 @@ mark.highlight.active {
 }
 
 /* ── Close button ───────────────────────────────────────────────────────────  */
-.close-btn:hover { background: #ff453a !important; color: #fff !important; }
-.close-btn:active { background: #d63a31 !important; }
+.close-btn:hover { background: var(--error-container) !important; color: var(--on-error-container) !important; }
+.close-btn:active { background: var(--error) !important; color: var(--on-error) !important; }
 
 /* ── Tab bar ────────────────────────────────────────────────────────────────  */
 #tab-bar {
@@ -309,7 +338,7 @@ mark.highlight.active {
 
 #tab-bar::-webkit-scrollbar       { height: 2px; }
 #tab-bar::-webkit-scrollbar-track { background: transparent; }
-#tab-bar::-webkit-scrollbar-thumb { background: #3a3a3c; border-radius: 2px; }
+#tab-bar::-webkit-scrollbar-thumb { background: var(--surface-variant); border-radius: 2px; }
 
 .tab-item {
   display:        flex;
@@ -318,6 +347,7 @@ mark.highlight.active {
   padding:        5px 10px;
   font-family:    var(--font);
   font-size:      11px;
+  font-weight:    600;
   color:          var(--text-dim);
   cursor:         pointer;
   white-space:    nowrap;
@@ -330,7 +360,7 @@ mark.highlight.active {
   flex-shrink:    0;
 }
 .tab-item:hover   { background: var(--bg-pill-hover); color: var(--text-toolbar); }
-.tab-item.active  { background: var(--bg-pill); color: var(--text); }
+.tab-item.active  { background: var(--primary-container); color: var(--on-primary-container); }
 
 .tab-close {
   display:         flex;
@@ -348,7 +378,7 @@ mark.highlight.active {
   flex-shrink:     0;
   transition:      background 0.1s, color 0.1s;
 }
-.tab-close:hover { background: rgba(255,69,58,0.25); color: #ff453a; }
+.tab-close:hover { background: rgba(242, 184, 181, 0.2); color: var(--error); }
 
 .tab-label {
   overflow:       hidden;
@@ -366,9 +396,8 @@ mark.highlight.active {
   flex-shrink: 0;
 }
 
-/* Make the AOT text feel like a clickable toggle */
 #status-text {
-  font-family: var(--font); font-size: 10px;
+  font-family: var(--font); font-size: 10px; font-weight: 700;
   color:       var(--text-dim);
   letter-spacing: 0.02em;
   cursor:      pointer;
@@ -377,28 +406,20 @@ mark.highlight.active {
   transition:  color 0.15s, background 0.15s;
   user-select: none;
 }
-#status-text:hover           { background: var(--bg-pill); color: var(--text-toolbar); }
-#status-text.aot-on          { color: var(--accent-green); }
-#status-text.aot-on:hover    { background: var(--bg-pill); color: var(--accent-green); }
+#status-text:hover           { background: rgba(255,255,255,0.06); color: var(--text-toolbar); }
+#status-text.aot-on          { color: var(--primary); }
+#status-text.aot-on:hover    { background: rgba(255,255,255,0.06); color: var(--primary); }
 #status-text.aot-off         { color: var(--text-dim); }
 
-/* ── Code blocks ─────────────────────────────────────────────────────────────
-   Structure:
-     .code-block                 ← outer wrapper, contenteditable=false
-       .code-block-header        ← lang label + copy button
-       .code-block-body          ← positioned container
-         .code-pre               ← highlighted pre (in flow, drives height)
-           code.language-*
-         .code-textarea          ← transparent input overlay (absolute)
-   ─────────────────────────────────────────────────────────────────────────── */
+/* ── Code blocks ─────────────────────────────────────────────────────────────  */
 
 .code-block {
   display:       block;
   margin:        10px 0;
-  border-radius: 6px;
+  border-radius: 8px;
   overflow:      hidden;
-  border:        1px solid rgba(255,255,255,0.10);
-  background:    #1e1e1e;
+  border:        1px solid var(--border);
+  background:    #2B2930;
   font-family:   'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
   user-select:   none;
   -webkit-app-region: no-drag;
@@ -409,15 +430,16 @@ mark.highlight.active {
   align-items:     center;
   justify-content: space-between;
   padding:         5px 12px;
-  background:      #2d2d2d;
-  border-bottom:   1px solid rgba(255,255,255,0.07);
+  background:      var(--surface-variant);
+  border-bottom:   1px solid var(--border);
 }
 
 .code-lang-label {
   font-family:    var(--font);
   font-size:      10.5px;
-  color:          #858585;
+  color:          var(--on-surface-variant);
   letter-spacing: 0.06em;
+  font-weight:    700;
 }
 
 .code-header-actions {
@@ -429,7 +451,8 @@ mark.highlight.active {
 .code-copy-btn {
   font-family:   var(--font);
   font-size:     10px;
-  color:         #858585;
+  font-weight:   700;
+  color:         var(--on-surface-variant);
   background:    transparent;
   border:        none;
   cursor:        pointer;
@@ -437,14 +460,14 @@ mark.highlight.active {
   border-radius: 3px;
   transition:    color 0.12s, background 0.12s;
 }
-.code-copy-btn:hover  { color: #d4d4d4; background: rgba(255,255,255,0.08); }
+.code-copy-btn:hover  { color: var(--text); background: rgba(255,255,255,0.08); }
 .code-copy-btn:active { background: rgba(255,255,255,0.13); }
-.code-copy-btn.copied { color: var(--accent-green); }
+.code-copy-btn.copied { color: var(--tertiary); }
 
 .code-delete-btn {
   font-family:   var(--font);
   font-size:     11px;
-  color:         #858585;
+  color:         var(--on-surface-variant);
   background:    transparent;
   border:        none;
   cursor:        pointer;
@@ -453,10 +476,9 @@ mark.highlight.active {
   transition:    color 0.12s, background 0.12s;
   line-height:   1;
 }
-.code-delete-btn:hover  { color: #ff453a; background: rgba(255,69,58,0.12); }
-.code-delete-btn:active { background: rgba(255,69,58,0.22); }
+.code-delete-btn:hover  { color: var(--error); background: rgba(242,184,181,0.1); }
+.code-delete-btn:active { background: rgba(242,184,181,0.2); }
 
-/* Body: relatively positioned so the textarea can overlay the pre */
 .code-block-body {
   position:   relative;
   min-height: 44px;
@@ -464,14 +486,12 @@ mark.highlight.active {
   overflow-y: hidden;
 }
 
-/* Pre: in normal flow, its rendered height sets .code-block-body's height */
 .code-pre {
   margin:     0;
   padding:    11px 16px;
   background: transparent;
   overflow:   visible;
   min-height: 44px;
-  /* pointer-events off so clicks reach the textarea */
   pointer-events: none;
 }
 
@@ -485,9 +505,9 @@ mark.highlight.active {
   font-family: inherit;
   white-space: pre;
   tab-size:    4;
+  color:       var(--on-surface-variant);
 }
 
-/* Textarea: transparent text on top of the pre — handles actual input */
 .code-textarea {
   position:    absolute;
   top:         0;
@@ -500,9 +520,8 @@ mark.highlight.active {
   border:      none;
   outline:     none;
   resize:      none;
-  /* Hide text visually (caret stays visible) */
   color:       transparent;
-  caret-color: #aeaeae;
+  caret-color: var(--primary);
   font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
   font-size:   12.5px;
   line-height: 1.6;
@@ -518,12 +537,12 @@ mark.highlight.active {
 #context-menu {
   position:      fixed;
   z-index:       9999;
-  min-width:     148px;
-  background:    #2c2c2e;
-  border:        1px solid rgba(255,255,255,0.10);
-  border-radius: 8px;
+  min-width:     172px;
+  background:    #332F38;
+  border:        1px solid var(--border);
+  border-radius: 10px;
   padding:       6px 0;
-  box-shadow:    0 8px 24px rgba(0,0,0,0.55);
+  box-shadow:    0 8px 28px rgba(0,0,0,0.55);
   display:       none;
   user-select:   none;
 }
@@ -540,25 +559,73 @@ mark.highlight.active {
 .ctx-fmt-btn {
   width:         32px;
   height:        28px;
-  background:    #3a3a3c;
-  border:        1px solid rgba(255,255,255,0.08);
-  border-radius: 5px;
-  color:         var(--text-toolbar);
+  background:    var(--surface-variant);
+  border:        1px solid var(--border);
+  border-radius: 6px;
+  color:         var(--on-surface-variant);
   font-size:     12px;
+  font-family:   var(--font);
+  font-weight:   700;
   cursor:        pointer;
   transition:    background 0.12s, color 0.12s;
   display:       flex;
   align-items:   center;
   justify-content: center;
 }
-.ctx-fmt-btn:hover           { background: #48484a; color: var(--text); }
-.ctx-fmt-btn.active          { background: #555558; color: #fff; }
+.ctx-fmt-btn:hover           { background: var(--bg-pill-hover); color: var(--text); }
+.ctx-fmt-btn.active          { background: var(--primary-container); color: var(--on-primary-container); }
 .ctx-fmt-btn:disabled        { opacity: 0.35; cursor: default; }
-.ctx-fmt-btn:disabled:hover  { background: #3a3a3c; color: var(--text-toolbar); }
+.ctx-fmt-btn:disabled:hover  { background: var(--surface-variant); color: var(--on-surface-variant); }
+
+/* ── Highlight row in context menu ───────────────────────────────────────────  */
+.ctx-highlight-row {
+  display:      flex;
+  align-items:  center;
+  gap:          5px;
+  padding:      6px 12px 6px;
+}
+
+.ctx-highlight-label {
+  font-family:  var(--font);
+  font-size:    11px;
+  font-weight:  700;
+  color:        var(--on-surface-variant);
+  margin-right: 2px;
+}
+
+.ctx-hl-btn {
+  width:         20px;
+  height:        20px;
+  border:        2px solid rgba(255,255,255,0.12);
+  border-radius: 50%;
+  cursor:        pointer;
+  transition:    transform 0.1s, border-color 0.1s;
+  padding:       0;
+}
+.ctx-hl-btn:hover {
+  transform:    scale(1.2);
+  border-color: rgba(255,255,255,0.35);
+}
+.ctx-hl-btn:disabled {
+  opacity: 0.35;
+  cursor:  default;
+  transform: none;
+}
+
+.ctx-hl-clear {
+  background:    rgba(255,255,255,0.08) !important;
+  font-size:     10px;
+  color:         var(--text-dim);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  font-family:   var(--font);
+  font-weight:   700;
+}
 
 .ctx-divider {
   height:     1px;
-  background: rgba(255,255,255,0.07);
+  background: var(--border);
   margin:     2px 0;
 }
 
@@ -568,9 +635,10 @@ mark.highlight.active {
   padding:    7px 16px;
   background: none;
   border:     none;
-  color:      var(--text);
+  color:      var(--on-background);
   font-size:  13px;
   font-family: var(--font);
+  font-weight: 600;
   text-align: left;
   cursor:     pointer;
   transition: background 0.1s;

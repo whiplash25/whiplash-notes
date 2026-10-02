@@ -24,6 +24,8 @@ const btnNew       = document.getElementById('btn-new');
 const btnDelete    = document.getElementById('btn-delete');
 const btnSidebar   = document.getElementById('btn-sidebar');
 const btnClose     = document.getElementById('btn-close');
+const btnMinimize  = document.getElementById('btn-minimize');
+const btnMaximize  = document.getElementById('btn-maximize');
 const btnSearch    = document.getElementById('btn-search');
 const tabBar       = document.getElementById('tab-bar');
 const sidebar      = document.getElementById('sidebar');
@@ -145,6 +147,7 @@ function setupCodeBlock(wrapper) {
   ta.addEventListener('input', () => {
     rehighlight();
     scheduleSave();
+    scheduleSnap();
   });
 
   ta.addEventListener('keydown', ev => {
@@ -311,6 +314,43 @@ function ensureTrailingLine() {
   }
 }
 
+// ── Snap code blocks & images to line grid ───────────────────────────────────
+/**
+ * Adjust the bottom margin of every code block and image so their total
+ * occupied height (offsetHeight + marginTop + marginBottom) is a multiple
+ * of the editor's line-height in pixels.  This keeps the repeating ruled-
+ * line background aligned with the text that follows.
+ */
+function snapToLineGrid() {
+  const root   = document.documentElement;
+  const fs     = parseFloat(getComputedStyle(root).getPropertyValue('--editor-fs'));
+  const lh     = parseFloat(getComputedStyle(root).getPropertyValue('--line-height'));
+  const gridPx = fs * lh;                      // one ruled-line interval
+  if (!gridPx || gridPx < 4) return;           // safety guard
+
+  editor.querySelectorAll('.code-block, .note-image').forEach(el => {
+    // Reset any previous adjustment so measurements are clean
+    el.style.marginBottom = '';
+
+    const cs        = getComputedStyle(el);
+    const mTop      = parseFloat(cs.marginTop)    || 0;
+    const mBot      = parseFloat(cs.marginBottom) || 0;
+    const total     = el.offsetHeight + mTop + mBot;
+    const snapped   = Math.ceil(total / gridPx) * gridPx;
+    const extra     = snapped - total;
+
+    if (extra > 0.5) {                          // avoid sub-pixel noise
+      el.style.marginBottom = (mBot + extra) + 'px';
+    }
+  });
+}
+
+let snapTimer = null;
+function scheduleSnap() {
+  clearTimeout(snapTimer);
+  snapTimer = setTimeout(snapToLineGrid, 60);
+}
+
 // ── Code block trigger ────────────────────────────────────────────────────────
 /**
  * Called from the editor keydown handler when Enter or Space is pressed.
@@ -408,7 +448,10 @@ function tryInsertCodeBlock(e) {
   }
 
   setupCodeBlock(codeBlock);
-  setTimeout(() => codeBlock.querySelector('.code-textarea').focus(), 10);
+  setTimeout(() => {
+    codeBlock.querySelector('.code-textarea').focus();
+    snapToLineGrid();
+  }, 10);
   scheduleSave();
   return true;
 }
@@ -458,6 +501,15 @@ function editorToText() {
     const isU = tag === 'u';
     const isS = tag === 's'      || tag === 'del';
 
+    // User highlight spans → ==color:text== marker
+    if (tag === 'span' && node.classList.contains('user-highlight')) {
+      const color = node.style.background || node.style.backgroundColor || '#ffe066';
+      parts.push(`==${color}:`);
+      node.childNodes.forEach(walk);
+      parts.push('==');
+      return;
+    }
+
     if (isB) parts.push('**');
     if (isI) parts.push('*');
     if (isU) parts.push('__');
@@ -504,6 +556,8 @@ function inlineToHtml(text) {
 
   // Markdown → HTML (order matters: ** before *)
   html = html
+    .replace(/==([\w#(),.\s]+?):([\s\S]*?)==/g,
+      '<span class="user-highlight" style="background:$1">$2</span>')
     .replace(/\*\*([\s\S]*?)\*\*/g, '<strong>$1</strong>')
     .replace(/__([\s\S]*?)__/g,      '<u>$1</u>')
     .replace(/~~([\s\S]*?)~~/g,      '<s>$1</s>')
@@ -594,7 +648,15 @@ statusEl.addEventListener('click', async () => {
   setAotLabel(isNowOn);
 });
 
-// ── Close button ─────────────────────────────────────────────────────────────
+// ── Window control buttons ───────────────────────────────────────────────────
+btnMinimize.addEventListener('click', () => {
+  window.notesAPI.minimizeWindow();
+});
+
+btnMaximize.addEventListener('click', () => {
+  window.notesAPI.maximizeWindow();
+});
+
 btnClose.addEventListener('click', async () => {
   clearTimeout(saveTimer);
   await flushCurrentNote();
@@ -645,6 +707,7 @@ async function switchToNote(note) {
   editor.innerHTML = textToHtml(note.content);
   initCodeBlocks();
   ensureTrailingLine();
+  snapToLineGrid();
   resetFormatButtons();
   ensureTab(currentFilename);
   renderTabs();
@@ -915,6 +978,7 @@ editor.addEventListener('paste', e => {
       editor.appendChild(img);
     }
     scheduleSave();
+    scheduleSnap();
   };
   reader.readAsDataURL(file);
 });
@@ -976,6 +1040,9 @@ fontSizeEl.addEventListener('change', () => {
   const size = parseInt(fontSizeEl.value, 10);
   if (!isNaN(size) && size >= 8 && size <= 72) {
     editor.style.fontSize = size + 'px';
+    // Update the CSS variable so ruled lines re-calculate their spacing
+    document.documentElement.style.setProperty('--editor-fs', size + 'px');
+    snapToLineGrid();
   }
 });
 fontSizeEl.addEventListener('keydown', e => {
@@ -1233,6 +1300,7 @@ async function init() {
     editor.innerHTML = textToHtml(allNotes[0].content);
     initCodeBlocks();
     ensureTrailingLine();
+    snapToLineGrid();
   } else {
     currentFilename = makeFilename();
   }
@@ -1262,6 +1330,7 @@ init();
   const ctxCut        = document.getElementById('ctx-cut');
   const ctxPaste      = document.getElementById('ctx-paste');
   const ctxSpellcheck = document.getElementById('ctx-spellcheck');
+  const ctxHlRow      = document.getElementById('ctx-highlight-row');
 
   function closeMenu() {
     menu.classList.remove('open');
@@ -1286,6 +1355,11 @@ init();
     document.querySelectorAll('.ctx-fmt-btn').forEach(btn => {
       btn.disabled = !hasSel;
       btn.classList.toggle('active', hasSel && document.queryCommandState(btn.dataset.cmd));
+    });
+
+    // Disable highlight buttons when nothing is selected
+    document.querySelectorAll('.ctx-hl-btn').forEach(btn => {
+      btn.disabled = !hasSel;
     });
 
     // Disable Copy/Cut when nothing is selected
@@ -1348,6 +1422,57 @@ init();
     editor.blur();
     editor.focus();
     closeMenu();
+  });
+
+  // ── Highlight buttons ──────────────────────────────────────────────────────
+  document.querySelectorAll('.ctx-hl-btn').forEach(btn => {
+    btn.addEventListener('mousedown', e => e.preventDefault()); // keep selection
+    btn.addEventListener('click', () => {
+      const color = btn.dataset.color;
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed) { closeMenu(); return; }
+
+      const range = sel.getRangeAt(0);
+
+      if (!color) {
+        // Remove highlight: unwrap any .user-highlight spans that overlap the selection.
+        // 1) Walk up from the selection to find an ancestor highlight span
+        let ancestor = range.commonAncestorContainer;
+        if (ancestor.nodeType === Node.TEXT_NODE) ancestor = ancestor.parentElement;
+        const ancestorHL = ancestor.closest ? ancestor.closest('span.user-highlight') : null;
+
+        // 2) Also find any descendant highlight spans inside the selection
+        const searchRoot = ancestorHL || ancestor;
+        const descendants = searchRoot.querySelectorAll
+          ? Array.from(searchRoot.querySelectorAll('span.user-highlight'))
+          : [];
+
+        // 3) Collect all unique spans to unwrap
+        const toUnwrap = new Set(descendants);
+        if (ancestorHL) toUnwrap.add(ancestorHL);
+
+        toUnwrap.forEach(span => {
+          span.replaceWith(...span.childNodes);
+        });
+        editor.normalize();
+      } else {
+        // Apply highlight: wrap selection in a colored span
+        const contents = range.extractContents();
+        const span = document.createElement('span');
+        span.className = 'user-highlight';
+        span.style.background = color;
+        span.appendChild(contents);
+        range.insertNode(span);
+        // Re-select the highlighted text
+        sel.removeAllRanges();
+        const newRange = document.createRange();
+        newRange.selectNodeContents(span);
+        sel.addRange(newRange);
+      }
+
+      scheduleSave();
+      closeMenu();
+    });
   });
 
   // Close on any outside click, Escape, or scroll
