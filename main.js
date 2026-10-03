@@ -2,9 +2,13 @@
 //  main.js  –  Electron main process
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, nativeTheme } = require('electron');
 const path = require('path');
 const fs   = require('fs');
+
+// ── Startup speed optimizations ──────────────────────────────────────────────
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');  // avoid cache errors
+app.commandLine.appendSwitch('disable-features', 'SpareRendererForSitePerProcess'); // skip spare renderer
 
 // ── Notes directory ───────────────────────────────────────────────────────────
 // Saved to the user's Documents folder so they're easy to find and open
@@ -52,6 +56,7 @@ function createWindow() {
     alwaysOnTop:    true,
     resizable:      true,
     hasShadow:      true,
+    show:           false,  // don't show until content is painted
     icon:           path.join(__dirname, 'icon.ico'),
     webPreferences: {
       preload:          path.join(__dirname, 'preload.js'),
@@ -63,6 +68,9 @@ function createWindow() {
 
   mainWindow.setAlwaysOnTop(true, 'screen-saver');
   mainWindow.loadFile('index.html');
+
+  // Show as soon as the renderer has painted — avoids white/blank flash
+  mainWindow.once('ready-to-show', () => mainWindow.show());
 
   mainWindow.on('close', () => saveWinState(mainWindow));
 }
@@ -103,6 +111,26 @@ ipcMain.handle('window:toggleAlwaysOnTop', () => {
   const next = !mainWindow.isAlwaysOnTop();
   mainWindow.setAlwaysOnTop(next, 'screen-saver');
   return next;
+});
+
+// Close the window
+ipcMain.handle('window:close', () => {
+  mainWindow.close();
+});
+
+// Minimize the window
+ipcMain.handle('window:minimize', () => {
+  mainWindow.minimize();
+});
+
+// Toggle maximize / restore
+ipcMain.handle('window:maximize', () => {
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow.maximize();
+  }
+  return mainWindow.isMaximized();
 });
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────

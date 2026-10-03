@@ -12,4 +12,7 @@ contextBridge.exposeInMainWorld('notesAPI', {
 
   // Window control
   toggleAlwaysOnTop: ()                 => ipcRenderer.invoke('window:toggleAlwaysOnTop'),
+  closeWindow:       ()                 => ipcRenderer.invoke('window:close'),
+  minimizeWindow:    ()                 => ipcRenderer.invoke('window:minimize'),
+  maximizeWindow:    ()                 => ipcRenderer.invoke('window:maximize'),
 });
