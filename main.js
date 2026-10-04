@@ -92,16 +92,18 @@ ipcMain.handle('notes:delete', (_event, filename) => {
 });
 
 // Return all notes sorted newest → oldest
-ipcMain.handle('notes:loadAll', () => {
-  ensureNotesDir();
-  return fs.readdirSync(NOTES_DIR)
-    .filter(f => f.endsWith('.txt'))
-    .map(filename => {
-      const fp   = path.join(NOTES_DIR, filename);
-      const stat = fs.statSync(fp);
-      return { filename, content: fs.readFileSync(fp, 'utf8'), mtime: stat.mtimeMs };
-    })
-    .sort((a, b) => b.mtime - a.mtime);
+ipcMain.handle('notes:loadAll', async () => {
+  await fs.promises.mkdir(NOTES_DIR, { recursive: true });
+  const files = (await fs.promises.readdir(NOTES_DIR)).filter(f => f.endsWith('.txt'));
+  const notes = await Promise.all(files.map(async filename => {
+    const fp = path.join(NOTES_DIR, filename);
+    const [stat, content] = await Promise.all([
+      fs.promises.stat(fp),
+      fs.promises.readFile(fp, 'utf8'),
+    ]);
+    return { filename, content, mtime: stat.mtimeMs };
+  }));
+  return notes.sort((a, b) => b.mtime - a.mtime);
 });
 
 // ── IPC: Window controls ──────────────────────────────────────────────────────

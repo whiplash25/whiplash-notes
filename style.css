@@ -1,54 +1,98 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   style.css  –  Material Design 3 dark theme, rounded Nunito font
+   style.css  –  Anthropic Dark theme, rounded Nunito font
    ───────────────────────────────────────────────────────────────────────────── */
+
+/* Nunito (variable, latin + latin-ext) — bundled locally, no network needed */
+@font-face {
+  font-family: 'Nunito';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('lib/fonts/nunito-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('lib/fonts/nunito-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('lib/fonts/nunito-normal-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('lib/fonts/nunito-normal-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* ── M3 Dark palette ────────────────────────────────────────────────────── */
-  --primary:               #EFB8C8;   /* Primary80   */
-  --on-primary:            #492532;   /* Primary20   */
-  --primary-container:     #633B48;   /* Primary30   */
-  --on-primary-container:  #FFD8E4;   /* Primary90   */
+  /* ── Palette: Anthropic Dark ────────────────────────────────────────────────
+     Brand colours: dark #141413, light #faf9f5, mid gray #b0aea5,
+                    orange #d97757, blue #6a9bcc, green #788c5d
+     primary    dark         #141413  – surfaces / chrome (warm-tinted ramp)
+     secondary  orange       #d97757  – accent: caret, active states, status
+     tertiary   blue         #6a9bcc  – info
+     success    green        #788c5d  – copy confirmation
+     error      rose         #e25563  – kept off the orange hue so destructive
+                                         actions never read as "accent"          */
+  --primary:               #141413;
+  --on-primary:            #faf9f5;
+  --primary-container:     #262624;
+  --on-primary-container:  #faf9f5;
 
-  --secondary:             #E8C1BB;   /* Secondary80 */
-  --on-secondary:          #492A27;   /* Secondary20 */
-  --secondary-container:   #5D3F3B;   /* Secondary30 */
-  --on-secondary-container:#FFDAD5;   /* Secondary90 */
+  --secondary:             #d97757;
+  --on-secondary:          #141413;
+  --secondary-container:   #4a2c20;
+  --on-secondary-container:#f6d9cc;
 
-  --tertiary:              #E4C18A;   /* Tertiary80  */
-  --on-tertiary:           #3E2E16;   /* Tertiary20  */
-  --tertiary-container:    #564527;   /* Tertiary30  */
-  --on-tertiary-container: #FFE0B2;   /* Tertiary90  */
+  --tertiary:              #6a9bcc;
+  --on-tertiary:           #0e2233;
+  --tertiary-container:    #2b4560;
+  --on-tertiary-container: #d3e4f5;
 
-  --error:                 #F2B8B5;   /* Error80     */
-  --on-error:              #601410;   /* Error20     */
-  --error-container:       #8C1D18;   /* Error30     */
-  --on-error-container:    #F9DEDC;   /* Error90     */
+  --success:               #788c5d;
 
-  --background:            #1C1B1F;   /* Neutral10   */
-  --on-background:         #E6E1E5;   /* Neutral90   */
-  --surface:               #1C1B1F;   /* Neutral10   */
-  --on-surface:            #E6E1E5;   /* Neutral90   */
+  --error:                 #e25563;
+  --on-error:              #3b0610;
+  --error-container:       #6b1d28;
+  --on-error-container:    #ffd9de;
 
-  --surface-variant:       #49454F;   /* N-Var30     */
-  --on-surface-variant:    #CAC4D0;   /* N-Var80     */
-  --outline:               #938F99;   /* N-Var60     */
+  --background:            #141413;
+  --on-background:         #faf9f5;
+  --surface:               #141413;
+  --on-surface:            #faf9f5;
+
+  --surface-variant:       #30302e;
+  --on-surface-variant:    #b0aea5;
+  --outline:               #87867f;
 
   /* ── Mapped to app tokens ───────────────────────────────────────────────── */
   --bg:            var(--background);
-  --bg-toolbar:    #2B2930;
+  --bg-toolbar:    #1f1e1d;
   --bg-pill:       var(--surface-variant);
-  --bg-pill-hover: #564F5E;
-  --bg-sidebar:    #211F26;
-  --bg-note-hover: #332F38;
-  --bg-note-active:#3D3845;
+  --bg-pill-hover: #3d3d3a;
+  --bg-sidebar:    #0f0f0e;
+  --bg-note-hover: #262624;
+  --bg-note-active:#30302e;
   --text:          var(--on-background);
   --text-dim:      var(--outline);
   --text-toolbar:  var(--on-surface-variant);
   --text-sidebar:  var(--on-background);
-  --accent:        var(--primary);
-  --border:        rgba(147, 143, 153, 0.18);
+  --accent:        var(--secondary);
+  --border:        rgba(176, 174, 165, 0.14);
   --font:          'Nunito', 'Varela Round', 'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif;
   --radius-window: 12px;
   --radius-pill:    6px;
@@ -71,6 +115,16 @@ html, body {
   border:        1px solid var(--border);
   overflow:      hidden;
   box-shadow:    0 8px 32px rgba(0,0,0,0.55);
+  position:      relative;
+}
+
+/* A drag region swallows the resize border beneath it. Carve a no-drag strip
+   over the top edge (and its corners) so the window can be grabbed to resize. */
+#app::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 6px;
+  z-index: 1000;
+  -webkit-app-region: no-drag;
 }
 
 /* ── Toolbar (doubles as drag handle) ────────────────────────────────────────  */
@@ -99,11 +153,11 @@ html, body {
   transition: background 0.12s, color 0.12s;
 }
 .icon-btn:hover  { background: var(--bg-pill-hover); color: var(--text); }
-.icon-btn:active { background: var(--primary-container); color: var(--on-primary-container); }
+.icon-btn:active { background: var(--secondary-container); color: var(--on-secondary-container); }
 #btn-new span    { position: relative; top: -1px; }
 
 /* Active state for sidebar button */
-#btn-sidebar.active { background: var(--primary-container); color: var(--on-primary-container); }
+#btn-sidebar.active { background: var(--secondary-container); color: var(--on-secondary-container); }
 
 /* Format pill */
 #cluster-format {
@@ -120,7 +174,7 @@ html, body {
   transition: background 0.12s, color 0.12s;
 }
 .fmt-btn:hover  { background: var(--bg-pill-hover); color: var(--text); }
-.fmt-btn:active, .fmt-btn.active { background: var(--primary-container); color: var(--on-primary-container); }
+.fmt-btn:active, .fmt-btn.active { background: var(--secondary-container); color: var(--on-secondary-container); }
 .fmt-btn b  { font-weight: 700; }
 .fmt-btn i  { font-style: italic; }
 .fmt-btn u  { text-decoration: underline; }
@@ -198,21 +252,21 @@ html, body {
   flex-shrink:     0;
 }
 .search-nav-btn:hover  { background: var(--bg-pill-hover); color: var(--text); }
-.search-nav-btn:active { background: var(--primary-container); }
+.search-nav-btn:active { background: var(--secondary-container); }
 
 /* Active search button state */
-#btn-search.active { background: var(--primary-container); color: var(--on-primary-container); }
+#btn-search.active { background: var(--secondary-container); color: var(--on-secondary-container); }
 
 /* ── Highlight marks (search) ────────────────────────────────────────────────  */
 mark.highlight {
-  background:     rgba(239, 184, 200, 0.25);
+  background:     rgba(217, 119, 87, 0.30);
   color:          inherit;
   border-radius:  2px;
   padding:        0 1px;
 }
 mark.highlight.active {
-  background:     var(--primary);
-  color:          var(--on-primary);
+  background:     var(--secondary);
+  color:          var(--on-secondary);
   border-radius:  2px;
 }
 
@@ -232,7 +286,7 @@ mark.highlight.active {
   overflow-y:  auto; overflow-x: hidden;
   word-wrap:   break-word;
   user-select: text;
-  caret-color: var(--primary);
+  caret-color: var(--secondary);
   white-space: pre-wrap;
   min-width:   0;
 }
@@ -247,7 +301,7 @@ mark.highlight.active {
 #editor::-webkit-scrollbar-thumb:hover { background: var(--outline); }
 #editor b, #editor strong { font-weight: 700; }
 #editor i, #editor em     { font-style: italic; }
-#editor u                 { text-decoration: underline; text-decoration-color: var(--primary); }
+#editor u                 { text-decoration: underline; text-decoration-color: var(--secondary); }
 #editor s, #editor del    { text-decoration: line-through; text-decoration-color: var(--outline); }
 
 /* ── User highlight spans ────────────────────────────────────────────────────  */
@@ -360,7 +414,7 @@ span.user-highlight {
   flex-shrink:    0;
 }
 .tab-item:hover   { background: var(--bg-pill-hover); color: var(--text-toolbar); }
-.tab-item.active  { background: var(--primary-container); color: var(--on-primary-container); }
+.tab-item.active  { background: var(--secondary-container); color: var(--on-secondary-container); }
 
 .tab-close {
   display:         flex;
@@ -378,7 +432,7 @@ span.user-highlight {
   flex-shrink:     0;
   transition:      background 0.1s, color 0.1s;
 }
-.tab-close:hover { background: rgba(242, 184, 181, 0.2); color: var(--error); }
+.tab-close:hover { background: rgba(226, 85, 99, 0.2); color: var(--error); }
 
 .tab-label {
   overflow:       hidden;
@@ -407,8 +461,8 @@ span.user-highlight {
   user-select: none;
 }
 #status-text:hover           { background: rgba(255,255,255,0.06); color: var(--text-toolbar); }
-#status-text.aot-on          { color: var(--primary); }
-#status-text.aot-on:hover    { background: rgba(255,255,255,0.06); color: var(--primary); }
+#status-text.aot-on          { color: var(--secondary); }
+#status-text.aot-on:hover    { background: rgba(255,255,255,0.06); color: var(--secondary); }
 #status-text.aot-off         { color: var(--text-dim); }
 
 /* ── Code blocks ─────────────────────────────────────────────────────────────  */
@@ -418,8 +472,8 @@ span.user-highlight {
   margin:        10px 0;
   border-radius: 8px;
   overflow:      hidden;
-  border:        1px solid var(--border);
-  background:    #2B2930;
+  border:        1px solid #313244;
+  background:    #1e1e2e;
   font-family:   'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
   user-select:   none;
   -webkit-app-region: no-drag;
@@ -430,14 +484,14 @@ span.user-highlight {
   align-items:     center;
   justify-content: space-between;
   padding:         5px 12px;
-  background:      var(--surface-variant);
-  border-bottom:   1px solid var(--border);
+  background:      #181825;
+  border-bottom:   1px solid #313244;
 }
 
 .code-lang-label {
   font-family:    var(--font);
   font-size:      10.5px;
-  color:          var(--on-surface-variant);
+  color:          #a6adc8;
   letter-spacing: 0.06em;
   font-weight:    700;
 }
@@ -452,7 +506,7 @@ span.user-highlight {
   font-family:   var(--font);
   font-size:     10px;
   font-weight:   700;
-  color:         var(--on-surface-variant);
+  color:         #a6adc8;
   background:    transparent;
   border:        none;
   cursor:        pointer;
@@ -462,12 +516,12 @@ span.user-highlight {
 }
 .code-copy-btn:hover  { color: var(--text); background: rgba(255,255,255,0.08); }
 .code-copy-btn:active { background: rgba(255,255,255,0.13); }
-.code-copy-btn.copied { color: var(--tertiary); }
+.code-copy-btn.copied { color: var(--success); }
 
 .code-delete-btn {
   font-family:   var(--font);
   font-size:     11px;
-  color:         var(--on-surface-variant);
+  color:         #a6adc8;
   background:    transparent;
   border:        none;
   cursor:        pointer;
@@ -476,8 +530,8 @@ span.user-highlight {
   transition:    color 0.12s, background 0.12s;
   line-height:   1;
 }
-.code-delete-btn:hover  { color: var(--error); background: rgba(242,184,181,0.1); }
-.code-delete-btn:active { background: rgba(242,184,181,0.2); }
+.code-delete-btn:hover  { color: var(--error); background: rgba(226,85,99,0.1); }
+.code-delete-btn:active { background: rgba(226,85,99,0.2); }
 
 .code-block-body {
   position:   relative;
@@ -485,6 +539,11 @@ span.user-highlight {
   overflow-x: auto;
   overflow-y: hidden;
 }
+
+.code-block-body::-webkit-scrollbar              { height: 6px; }
+.code-block-body::-webkit-scrollbar-track        { background: transparent; }
+.code-block-body::-webkit-scrollbar-thumb        { background: #45475a; border-radius: 3px; }
+.code-block-body::-webkit-scrollbar-thumb:hover  { background: #585b70; }
 
 .code-pre {
   margin:     0;
@@ -505,7 +564,7 @@ span.user-highlight {
   font-family: inherit;
   white-space: pre;
   tab-size:    4;
-  color:       var(--on-surface-variant);
+  color:       #cdd6f4;
 }
 
 .code-textarea {
@@ -521,7 +580,7 @@ span.user-highlight {
   outline:     none;
   resize:      none;
   color:       transparent;
-  caret-color: var(--primary);
+  caret-color: #f5e0dc;
   font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
   font-size:   12.5px;
   line-height: 1.6;
@@ -538,7 +597,7 @@ span.user-highlight {
   position:      fixed;
   z-index:       9999;
   min-width:     172px;
-  background:    #332F38;
+  background:    #262624;
   border:        1px solid var(--border);
   border-radius: 10px;
   padding:       6px 0;
@@ -573,7 +632,7 @@ span.user-highlight {
   justify-content: center;
 }
 .ctx-fmt-btn:hover           { background: var(--bg-pill-hover); color: var(--text); }
-.ctx-fmt-btn.active          { background: var(--primary-container); color: var(--on-primary-container); }
+.ctx-fmt-btn.active          { background: var(--secondary-container); color: var(--on-secondary-container); }
 .ctx-fmt-btn:disabled        { opacity: 0.35; cursor: default; }
 .ctx-fmt-btn:disabled:hover  { background: var(--surface-variant); color: var(--on-surface-variant); }
 
@@ -593,7 +652,7 @@ span.user-highlight {
   margin-right: 2px;
 }
 
-.ctx-hl-btn {
+.ctx-hl-btn, .ctx-col-btn {
   width:         20px;
   height:        20px;
   border:        2px solid rgba(255,255,255,0.12);
@@ -602,7 +661,7 @@ span.user-highlight {
   transition:    transform 0.1s, border-color 0.1s;
   padding:       0;
 }
-.ctx-hl-btn:hover {
+.ctx-hl-btn:hover, .ctx-col-btn:hover {
   transform:    scale(1.2);
   border-color: rgba(255,255,255,0.35);
 }
@@ -655,4 +714,50 @@ span.user-highlight {
   margin:        6px 0;
   user-select:   none;
   -webkit-app-region: no-drag;
+}
+
+/* ── Text color picker ───────────────────────────────────────────────────────  */
+.color-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px;
+  width: 30px; height: 26px;
+  background: transparent; border: none; border-radius: 4px;
+  color: var(--text-toolbar);
+  font-family: var(--font); font-size: 13px; font-weight: 700; line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.color-btn:hover, .color-btn.open { background: var(--bg-pill-hover); color: var(--text); }
+#color-swatch-bar {
+  width: 14px; height: 3px; border-radius: 2px;
+  background: var(--text-toolbar);
+}
+
+#color-popover {
+  display: none;
+  position: absolute; top: 44px; left: 0;
+  z-index: 900;
+  align-items: center; gap: 6px;
+  padding: 8px 10px;
+  background: var(--surface-variant);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  -webkit-app-region: no-drag;
+}
+#color-popover.open { display: flex; }
+.color-sw {
+  width: 20px; height: 20px; padding: 0;
+  border: 2px solid rgba(255,255,255,0.12); border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.1s;
+}
+.color-sw:hover { transform: scale(1.18); border-color: rgba(255,255,255,0.5); }
+.color-sw-clear {
+  background: transparent; color: var(--on-surface-variant);
+  font-size: 10px; line-height: 1;
+}
+#color-custom {
+  width: 24px; height: 24px; padding: 0;
+  background: none; border: none; cursor: pointer;
 }
