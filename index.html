@@ -4,11 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Notes</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;1,400;1,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="lib/prism-vscode-dark.css" />
+  <link rel="stylesheet" href="lib/prism-catppuccin-mocha.css" />
 </head>
 <body>
 
@@ -39,6 +36,9 @@
         <button class="fmt-btn" data-cmd="italic"        title="Italic (Ctrl+I)"><i>I</i></button>
         <button class="fmt-btn" data-cmd="underline"     title="Underline (Ctrl+U)"><u>U</u></button>
         <button class="fmt-btn" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+        <button id="btn-color" class="color-btn" title="Text color" aria-haspopup="true">
+          <span class="color-btn-a">A</span><span id="color-swatch-bar"></span>
+        </button>
       </div>
 
       <!-- Right: font size + search + sidebar toggle + close -->
@@ -87,6 +87,19 @@
       </div>
 
     </div><!-- /toolbar -->
+
+    <!-- ── Text color palette — hidden until #btn-color is clicked ────────────── -->
+    <div id="color-popover" aria-hidden="true">
+      <button class="color-sw" data-color="#ff6b6b" title="Red"    style="background:#ff6b6b"></button>
+      <button class="color-sw" data-color="#ffa94d" title="Orange" style="background:#ffa94d"></button>
+      <button class="color-sw" data-color="#ffd43b" title="Yellow" style="background:#ffd43b"></button>
+      <button class="color-sw" data-color="#69db7c" title="Green"  style="background:#69db7c"></button>
+      <button class="color-sw" data-color="#4dabf7" title="Blue"   style="background:#4dabf7"></button>
+      <button class="color-sw" data-color="#b197fc" title="Purple" style="background:#b197fc"></button>
+      <button class="color-sw" data-color="#f783ac" title="Pink"   style="background:#f783ac"></button>
+      <button class="color-sw color-sw-clear" data-color="" title="Default color">✕</button>
+      <input id="color-custom" type="color" value="#ff6b6b" title="Custom color" aria-label="Custom color" />
+    </div>
 
     <!-- ── Search bar — hidden until Ctrl+F or 🔍 clicked ───────────────────── -->
     <div id="search-bar">
@@ -148,6 +161,17 @@
       <button class="ctx-hl-btn" data-color="#2a5580" title="Blue" style="background:#2a5580;"></button>
       <button class="ctx-hl-btn" data-color="#6b3a80" title="Purple" style="background:#6b3a80;"></button>
       <button class="ctx-hl-btn ctx-hl-clear" data-color="" title="Remove highlight">✕</button>
+    </div>
+    <div id="ctx-color-row" class="ctx-highlight-row">
+      <span class="ctx-highlight-label">Color</span>
+      <button class="ctx-col-btn" data-color="#ff6b6b" title="Red" style="background:#ff6b6b;"></button>
+      <button class="ctx-col-btn" data-color="#ffa94d" title="Orange" style="background:#ffa94d;"></button>
+      <button class="ctx-col-btn" data-color="#ffd43b" title="Yellow" style="background:#ffd43b;"></button>
+      <button class="ctx-col-btn" data-color="#69db7c" title="Green" style="background:#69db7c;"></button>
+      <button class="ctx-col-btn" data-color="#4dabf7" title="Blue" style="background:#4dabf7;"></button>
+      <button class="ctx-col-btn" data-color="#b197fc" title="Purple" style="background:#b197fc;"></button>
+      <button class="ctx-col-btn" data-color="#f783ac" title="Pink" style="background:#f783ac;"></button>
+      <button class="ctx-col-btn ctx-hl-clear" data-color="" title="Default color">✕</button>
     </div>
     <div class="ctx-divider"></div>
     <button class="ctx-item" id="ctx-copy">Copy</button>

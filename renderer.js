@@ -457,6 +457,25 @@ function tryInsertCodeBlock(e) {
 }
 
 // ── Serialise editor → plain text ─────────────────────────────────────────────
+/** "rgb(255, 107, 107)" / "#f66" / "#ff6b6b" → "#ff6b6b" (null if unparseable). */
+function rgbToHex(value) {
+  if (!value) return null;
+  const rgb = value.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/);
+  if (rgb) return '#' + rgb.slice(1, 4).map(n => (+n).toString(16).padStart(2, '0')).join('');
+  const hex = value.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!hex) return null;
+  const h = hex[1].length === 3 ? hex[1].replace(/./g, '$&$&') : hex[1];
+  return '#' + h.toLowerCase();
+}
+
+/** Explicit text color on an editor element (<font color> or style="color:"). */
+function elementTextColor(el) {
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'font') return rgbToHex(el.getAttribute('color') || el.style.color);
+  if (tag === 'span') return rgbToHex(el.style.color);
+  return null;
+}
+
 /**
  * Walk the editor's DOM and produce plain text with:
  *   - **bold**, *italic*, __underline__, ~~strikethrough__ markdown markers
@@ -466,8 +485,22 @@ function tryInsertCodeBlock(e) {
  */
 function editorToText() {
   const parts = [];
+  const defaultColor = rgbToHex(getComputedStyle(editor).color);
 
+  // Text color → {#rrggbb|text}. Wraps whatever walkNode emits for the element,
+  // so it composes with bold/italic/highlight on the same node.
   function walk(node) {
+    const color = node.nodeType === Node.ELEMENT_NODE ? elementTextColor(node) : null;
+    if (color && color !== defaultColor) {
+      parts.push(`{${color}|`);
+      walkNode(node);
+      parts.push('}');
+    } else {
+      walkNode(node);
+    }
+  }
+
+  function walkNode(node) {
     if (node.nodeType === Node.TEXT_NODE) {
       parts.push(node.nodeValue);
       return;
@@ -555,6 +588,13 @@ function inlineToHtml(text) {
     .replace(/>/g, '&gt;');
 
   // Markdown → HTML (order matters: ** before *)
+  // Text color {#rrggbb|text}. Innermost first, so nested colors resolve correctly.
+  const COLOR_RE = /\{(#[0-9a-fA-F]{6})\|([^{}]*)\}/g;
+  for (let prev; prev !== html; ) {
+    prev = html;
+    html = html.replace(COLOR_RE, '<span class="user-color" style="color:$1">$2</span>');
+  }
+
   html = html
     .replace(/==([\w#(),.\s]+?):([\s\S]*?)==/g,
       '<span class="user-highlight" style="background:$1">$2</span>')
@@ -615,6 +655,7 @@ function filenameToDate(filename) {
 /** First non-empty line of plain text, stripped of markdown markers */
 function firstLine(text) {
   return (text.split('\n').find(l => l.trim() && !l.trim().startsWith('```')) || '(empty)')
+    .replace(/\{#[0-9a-fA-F]{6}\|([^{}]*)\}/g, '$1')
     .replace(/[*_~`]/g, '')
     .trim();
 }
@@ -623,7 +664,7 @@ function firstLine(text) {
 function secondLine(text) {
   const lines = text.split('\n').filter(l => l.trim() && !l.trim().startsWith('```'));
   if (lines.length < 2) return '';
-  return lines[1].replace(/[*_~`]/g, '').trim();
+  return lines[1].replace(/\{#[0-9a-fA-F]{6}\|([^{}]*)\}/g, '$1').replace(/[*_~`]/g, '').trim();
 }
 
 function flashStatus(msg, ms = 1400) {
@@ -918,19 +959,34 @@ document.getElementById('search-close').addEventListener('click', () => closeSea
 
 // ── Save ──────────────────────────────────────────────────────────────────────
 
+/**
+ * Saves the current note if its text changed since the last save.
+ * Returns { wrote, headerChanged }: headerChanged is true when the tab/sidebar
+ * labels (first two lines) differ or the note is new, so callers can skip
+ * rebuilding the tab bar and sidebar on ordinary keystrokes.
+ */
 async function flushCurrentNote() {
-  if (!currentFilename) return;
+  const result = { wrote: false, headerChanged: false };
+  if (!currentFilename) return result;
   const content = editorToText();
-  if (!content) return;
-  await window.notesAPI.save(currentFilename, content);
-  // Update in-memory cache
+  if (!content) return result;
+
   const idx = allNotes.findIndex(n => n.filename === currentFilename);
+  const prev = idx >= 0 ? allNotes[idx].content : null;
+  if (prev === content) return result;   // nothing to write
+
+  await window.notesAPI.save(currentFilename, content);
+  result.wrote = true;
   if (idx >= 0) {
+    result.headerChanged = firstLine(prev) !== firstLine(content) ||
+                           secondLine(prev) !== secondLine(content);
     allNotes[idx].content = content;
     allNotes[idx].mtime   = Date.now();
   } else {
+    result.headerChanged = true;
     allNotes.unshift({ filename: currentFilename, content, mtime: Date.now() });
   }
+  return result;
 }
 
 function scheduleSave() {
@@ -939,20 +995,111 @@ function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     if (!currentFilename) currentFilename = makeFilename();
-    await flushCurrentNote();
-    renderTabs();
-    if (sidebarOpen) renderSidebar();
+    const { wrote, headerChanged } = await flushCurrentNote();
+    if (!wrote) return;
+    if (headerChanged) {
+      renderTabs();
+      if (sidebarOpen) renderSidebar();
+    }
     flashStatus('Saved  ·  Always on Top');
   }, 400);
 }
 
 editor.addEventListener('input', scheduleSave);
 
-// ── Image paste ───────────────────────────────────────────────────────────────
+// ── Paste ─────────────────────────────────────────────────────────────────────
+// Pasted web content keeps its structure and emphasis (bold / italic / underline /
+// strikethrough, paragraphs, lists) but drops the page's own fonts, sizes, colours
+// and backgrounds — those would clash with the app theme (e.g. black text on dark).
+function htmlToNoteHtml(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const SKIP   = new Set(['script', 'style', 'head', 'meta', 'link', 'title', 'noscript', 'template',
+                          'svg', 'img', 'picture', 'video', 'audio', 'iframe', 'canvas', 'button',
+                          'input', 'select', 'textarea']);
+  const BLOCK1 = new Set(['div', 'li', 'tr', 'section', 'article', 'header', 'footer', 'nav', 'main',
+                          'aside', 'form', 'dd', 'dt', 'address', 'figure', 'figcaption', 'details', 'summary']);
+  const BLOCK2 = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'table', 'blockquote', 'pre', 'dl']);
+  const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const out = [];
+  let breaks = 2;                       // <br>s at the end of out (2 = start: no leading breaks)
+  const brk = n => { while (breaks < n) { out.push('<br>'); breaks++; } };
+
+  function emitText(text, f) {
+    if (!text) return;
+    let h = esc(text);
+    if (f.s) h = `<s>${h}</s>`;
+    if (f.u) h = `<u>${h}</u>`;
+    if (f.i) h = `<em>${h}</em>`;
+    if (f.b) h = `<strong>${h}</strong>`;
+    out.push(h);
+    breaks = 0;
+  }
+
+  function walk(node, f, pre) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (pre) {
+        node.nodeValue.split('\n').forEach((line, i) => {
+          if (i) { out.push('<br>'); breaks++; }
+          emitText(line, f);
+        });
+        return;
+      }
+      let t = node.nodeValue.replace(/[ \t\r\n\f\u00a0]+/g, ' ');
+      if (breaks > 0) t = t.replace(/^ /, '');   // no leading space at line start
+      emitText(t, f);
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    const tag = node.tagName.toLowerCase();
+    const st  = node.style || {};
+    if (SKIP.has(tag) || st.display === 'none') return;
+    if (tag === 'br') { out.push('<br>'); breaks++; return; }
+
+    const weight = String(st.fontWeight || '');
+    const deco   = String(st.textDecorationLine || st.textDecoration || '');
+    const nf = {
+      b: f.b || (/^(b|strong|h[1-6]|th)$/.test(tag) && weight !== 'normal' && weight !== '400') ||
+         weight === 'bold' || weight === 'bolder' || +weight >= 600,
+      i: f.i || tag === 'i' || tag === 'em' || st.fontStyle === 'italic',
+      u: f.u || tag === 'u' || deco.includes('underline'),
+      s: f.s || /^(s|strike|del)$/.test(tag) || deco.includes('line-through'),
+    };
+
+    if (BLOCK2.has(tag)) brk(2); else if (BLOCK1.has(tag)) brk(1);
+    if (tag === 'li') {
+      const parent = node.parentElement;
+      const n = parent && parent.tagName.toLowerCase() === 'ol'
+        ? Array.from(parent.children).indexOf(node) + 1 : 0;
+      emitText(n ? `${n}. ` : '• ', {});
+    }
+    if ((tag === 'td' || tag === 'th') && node.previousElementSibling) emitText(' | ', {});
+
+    node.childNodes.forEach(c => walk(c, nf, pre || tag === 'pre'));
+
+    if (BLOCK2.has(tag)) brk(2); else if (BLOCK1.has(tag)) brk(1);
+  }
+
+  walk(doc.body, {}, false);
+  while (out.length && out[out.length - 1] === '<br>') out.pop();
+  return out.join('').replace(/ +<br>/g, '<br>');
+}
+
 editor.addEventListener('paste', e => {
   const items = Array.from(e.clipboardData?.items || []);
   const imageItem = items.find(it => it.type.startsWith('image/'));
-  if (!imageItem) return; // let normal paste proceed
+  if (!imageItem) {
+    const html = e.clipboardData?.getData('text/html');
+    const text = e.clipboardData?.getData('text/plain');
+    if (!html && text == null) return;   // nothing readable: leave it to the browser
+    e.preventDefault();
+    const clean = html ? htmlToNoteHtml(html) : '';
+    if (clean) document.execCommand('insertHTML', false, clean);
+    else document.execCommand('insertText', false, (text || '').replace(/\r\n?/g, '\n'));
+    scheduleSave();
+    return;
+  }
 
   e.preventDefault();
   const file = imageItem.getAsFile();
@@ -1078,6 +1225,8 @@ function applyFormat(cmd) {
 }
 
 function resetFormatButtons() {
+  typingColor = null;
+  colorBar.style.background = '';
   Object.keys(fmtState).forEach(cmd => {
     if (fmtState[cmd]) {
       document.execCommand(cmd, false, null);
@@ -1091,6 +1240,99 @@ document.querySelectorAll('.fmt-btn').forEach(btn => {
   btn.addEventListener('mousedown', e => e.preventDefault()); // keep selection
   btn.addEventListener('click', () => applyFormat(btn.dataset.cmd));
 });
+
+// ── Text color ────────────────────────────────────────────────────────────────
+// Selection: recolors the selected text. No selection: sets the color for the
+// text typed next (the browser keeps it until the caret moves elsewhere).
+const colorBtn    = document.getElementById('btn-color');
+const colorPop    = document.getElementById('color-popover');
+const colorBar    = document.getElementById('color-swatch-bar');
+const colorCustom = document.getElementById('color-custom');
+let colorSavedRange = null;   // selection to restore after the native picker steals focus
+
+function closeColorPopover() {
+  colorPop.classList.remove('open');
+  colorBtn.classList.remove('open');
+  colorPop.setAttribute('aria-hidden', 'true');
+}
+
+let typingColor = null;       // color for text typed next; null = no preference (browser default)
+
+function execForeColor(color) {   // color: '#rrggbb', or '' for the default color
+  const value = color || rgbToHex(getComputedStyle(editor).color);
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand('foreColor', false, value);
+  document.execCommand('styleWithCSS', false, false);
+}
+
+function applyTextColor(color) {   // color: '#rrggbb', or '' for the default color
+  editor.focus();
+  if (colorSavedRange) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(colorSavedRange);
+    colorSavedRange = null;
+  }
+  const sel = window.getSelection();
+  // No selection: remember the color so it survives caret moves until changed.
+  if (sel && sel.isCollapsed) typingColor = color;
+  execForeColor(color);
+  colorBar.style.background = color || '';
+  scheduleSave();
+}
+
+// Typed text takes the remembered color even if the caret moved or the browser
+// inherited a neighbour's color — same select-and-fix approach as the format fix.
+editor.addEventListener('input', e => {
+  if (typingColor === null || e.inputType !== 'insertText' || !e.data) return;
+  const want = typingColor || rgbToHex(getComputedStyle(editor).color);
+  if (rgbToHex(document.queryCommandValue('foreColor')) === want) return;
+
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+  const node = range.startContainer, offset = range.startOffset;
+  if (node.nodeType !== Node.TEXT_NODE || offset < e.data.length) return;
+
+  const fix = document.createRange();
+  fix.setStart(node, offset - e.data.length);
+  fix.setEnd(node, offset);
+  sel.removeAllRanges();
+  sel.addRange(fix);
+  execForeColor(typingColor);
+  sel.collapseToEnd();
+});
+
+colorBtn.addEventListener('mousedown', e => e.preventDefault());   // keep selection
+colorBtn.addEventListener('click', () => {
+  const open = !colorPop.classList.contains('open');
+  closeColorPopover();
+  if (!open) return;
+  const appRect = document.getElementById('app').getBoundingClientRect();
+  const btnRect = colorBtn.getBoundingClientRect();
+  colorPop.classList.add('open');
+  colorPop.setAttribute('aria-hidden', 'false');
+  colorBtn.classList.add('open');
+  const left = btnRect.left - appRect.left + btnRect.width / 2 - colorPop.offsetWidth / 2;
+  colorPop.style.left = Math.max(6, Math.min(left, appRect.width - colorPop.offsetWidth - 6)) + 'px';
+});
+
+colorPop.querySelectorAll('.color-sw').forEach(sw => {
+  sw.addEventListener('mousedown', e => e.preventDefault());
+  sw.addEventListener('click', () => { applyTextColor(sw.dataset.color); closeColorPopover(); });
+});
+
+// The native picker takes focus, so remember the selection first.
+colorCustom.addEventListener('mousedown', () => {
+  const sel = window.getSelection();
+  colorSavedRange = sel.rangeCount && editor.contains(sel.anchorNode) ? sel.getRangeAt(0).cloneRange() : null;
+});
+colorCustom.addEventListener('change', () => { applyTextColor(colorCustom.value); closeColorPopover(); });
+
+document.addEventListener('mousedown', e => {
+  if (!colorPop.contains(e.target) && !colorBtn.contains(e.target)) closeColorPopover();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeColorPopover(); });
 
 // After a character is typed, fix its formatting if the browser silently
 // inherited bold/italic/etc. from adjacent styled text.  We select the
@@ -1388,6 +1630,12 @@ init();
       btn.classList.toggle('active', document.queryCommandState(btn.dataset.cmd));
       scheduleSave();
     });
+  });
+
+  // Text color row — applies to the selection, or sets the color for typing.
+  document.querySelectorAll('.ctx-col-btn').forEach(btn => {
+    btn.addEventListener('mousedown', e => e.preventDefault()); // keep selection
+    btn.addEventListener('click', () => { applyTextColor(btn.dataset.color); closeMenu(); });
   });
 
   ctxCopy.addEventListener('mousedown', e => e.preventDefault());
