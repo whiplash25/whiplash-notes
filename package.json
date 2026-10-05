@@ -1,5 +1,5 @@
 {
-  "name": "whiplash-notes",
+  "name": "otter",
   "version": "1.0.0",
   "description": "Ultra-minimalist always-on-top note app for Windows 11",
   "main": "main.js",
@@ -8,8 +8,8 @@
     "dist": "electron-builder --win nsis"
   },
   "build": {
-    "appId": "com.whiplash.notes",
-    "productName": "Whiplash Notes",
+    "appId": "com.otter.notes",
+    "productName": "Otter",
     "directories": {
       "output": "dist"
     },
@@ -22,7 +22,7 @@
       "perMachine": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Whiplash Notes"
+      "shortcutName": "Otter"
     },
     "files": [
       "main.js",
