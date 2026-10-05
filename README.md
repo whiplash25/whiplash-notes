@@ -1,4 +1,4 @@
-# Whiplash Notes
+# Otter
 
 An ultra-minimalist, always-on-top note-taking app for Windows 11. Built for video note-taking — it floats above every other window so you never lose your place.
 
