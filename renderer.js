@@ -1149,7 +1149,54 @@ btnNew.addEventListener('click', async () => {
 });
 
 // ── Delete note ───────────────────────────────────────────────────────────────
+// ── Delete confirmation ───────────────────────────────────────────────────────
+const confirmOverlay = document.getElementById('confirm-overlay');
+const confirmText    = document.getElementById('confirm-text');
+const confirmCancel  = document.getElementById('confirm-cancel');
+const confirmOk      = document.getElementById('confirm-ok');
+
+/** Themed confirm dialog. Resolves true on Delete, false on Cancel / Esc / click outside. */
+function confirmDelete(noteTitle) {
+  return new Promise(resolve => {
+    confirmText.textContent = `“${noteTitle}” will be permanently deleted. This can’t be undone.`;
+    confirmOverlay.classList.add('open');
+    confirmOverlay.setAttribute('aria-hidden', 'false');
+    confirmCancel.focus();                       // safe default: Enter cancels
+
+    function done(result) {
+      confirmOverlay.classList.remove('open');
+      confirmOverlay.setAttribute('aria-hidden', 'true');
+      confirmOk.removeEventListener('click', onOk);
+      confirmCancel.removeEventListener('click', onCancel);
+      confirmOverlay.removeEventListener('mousedown', onOutside);
+      document.removeEventListener('keydown', onKey, true);
+      resolve(result);
+    }
+    const onOk      = () => done(true);
+    const onCancel  = () => done(false);
+    const onOutside = e => { if (e.target === confirmOverlay) done(false); };
+    const onKey     = e => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); }
+      else if (e.key === 'Tab') {                // keep focus inside the dialog
+        e.preventDefault();
+        (document.activeElement === confirmCancel ? confirmOk : confirmCancel).focus();
+      }
+    };
+    confirmOk.addEventListener('click', onOk);
+    confirmCancel.addEventListener('click', onCancel);
+    confirmOverlay.addEventListener('mousedown', onOutside);
+    document.addEventListener('keydown', onKey, true);
+  });
+}
+
 btnDelete.addEventListener('click', async () => {
+  // Empty, never-saved notes have nothing to lose — skip the prompt for those.
+  const content = editorToText();
+  if (content) {
+    const title = firstLine(content).slice(0, 40);
+    if (!(await confirmDelete(title))) { editor.focus(); return; }
+  }
+
   clearTimeout(saveTimer);
 
   const deletedFilename = currentFilename;
