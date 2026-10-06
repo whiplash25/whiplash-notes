@@ -2,7 +2,7 @@
 //  main.js  –  Electron main process
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { app, BrowserWindow, ipcMain, screen, nativeTheme } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, nativeTheme, globalShortcut } = require('electron');
 const path = require('path');
 const fs   = require('fs');
 
@@ -108,12 +108,19 @@ ipcMain.handle('notes:loadAll', async () => {
 
 // ── IPC: Window controls ──────────────────────────────────────────────────────
 
-// Toggle always-on-top and return the new state
-ipcMain.handle('window:toggleAlwaysOnTop', () => {
+// Toggle always-on-top, tell the renderer (so the status label follows), return the new state.
+// Shared by the status-bar click and the global shortcut.
+const AOT_SHORTCUT = 'CommandOrControl+Alt+T';
+
+function toggleAlwaysOnTop() {
+  if (!mainWindow || mainWindow.isDestroyed()) return false;
   const next = !mainWindow.isAlwaysOnTop();
   mainWindow.setAlwaysOnTop(next, 'screen-saver');
+  mainWindow.webContents.send('window:aotChanged', next);
   return next;
-});
+}
+
+ipcMain.handle('window:toggleAlwaysOnTop', toggleAlwaysOnTop);
 
 // Close the window
 ipcMain.handle('window:close', () => {
@@ -139,6 +146,12 @@ ipcMain.handle('window:maximize', () => {
 app.whenReady().then(() => {
   ensureNotesDir();
   createWindow();
+  // Works even when the window isn't focused (it usually floats over another app).
+  if (!globalShortcut.register(AOT_SHORTCUT, toggleAlwaysOnTop)) {
+    console.warn(`Could not register ${AOT_SHORTCUT} (already in use by another app)`);
+  }
 });
+
+app.on('will-quit', () => globalShortcut.unregisterAll());
 
 app.on('window-all-closed', () => app.quit());
