@@ -689,6 +689,9 @@ statusEl.addEventListener('click', async () => {
   setAotLabel(isNowOn);
 });
 
+// Toggled from the global shortcut (Ctrl+Alt+T) in the main process
+window.notesAPI.onAlwaysOnTopChanged(setAotLabel);
+
 // ── Window control buttons ───────────────────────────────────────────────────
 btnMinimize.addEventListener('click', () => {
   window.notesAPI.minimizeWindow();

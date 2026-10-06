@@ -14,7 +14,7 @@ Grab the latest `.exe` from the [Releases](../../releases) page. No installation
 
 ## Features
 
-- **Always on Top** — floats above every other window, including video players. Click the status text in the bottom-right corner to toggle it on/off whenever you need.
+- **Always on Top** — floats above every other window, including video players. Click the status text in the bottom-right corner, or press `Ctrl+Alt+T` from anywhere (even when another app is focused), to toggle it on/off.
 - **Frameless dark UI** — deep charcoal background, rounded corners, no distracting title bar.
 - **Rich text formatting** — Bold, Italic, Underline, and Strikethrough via toolbar buttons or `Ctrl+B / I / U`.
 - **Adjustable font size** — change it on the fly from the toolbar.
