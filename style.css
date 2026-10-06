@@ -761,3 +761,38 @@ span.user-highlight {
   width: 24px; height: 24px; padding: 0;
   background: none; border: none; cursor: pointer;
 }
+
+/* ── Delete confirmation dialog ──────────────────────────────────────────────  */
+#confirm-overlay {
+  display: none;
+  position: absolute; inset: 0;
+  z-index: 2000;
+  align-items: center; justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-app-region: no-drag;
+}
+#confirm-overlay.open { display: flex; }
+#confirm-box {
+  width: 100%; max-width: 320px;
+  padding: 18px 18px 14px;
+  background: var(--surface-variant);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.6);
+  font-family: var(--font);
+}
+#confirm-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+#confirm-text  { font-size: 12px; line-height: 1.5; color: var(--on-surface-variant); word-break: break-word; }
+#confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.confirm-btn {
+  height: 28px; padding: 0 14px;
+  border: none; border-radius: var(--radius-btn);
+  background: rgba(255,255,255,0.08); color: var(--text);
+  font-family: var(--font); font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: background 0.12s;
+}
+.confirm-btn:hover  { background: rgba(255,255,255,0.14); }
+.confirm-btn:focus-visible { outline: 2px solid var(--secondary); outline-offset: 1px; }
+.confirm-danger        { background: var(--error); color: var(--on-error); }
+.confirm-danger:hover  { background: #ee6a77; }

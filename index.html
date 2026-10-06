@@ -36,13 +36,13 @@
         <button class="fmt-btn" data-cmd="italic"        title="Italic (Ctrl+I)"><i>I</i></button>
         <button class="fmt-btn" data-cmd="underline"     title="Underline (Ctrl+U)"><u>U</u></button>
         <button class="fmt-btn" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+      </div>
+
+      <!-- Right: text color + font size + search + sidebar toggle + close -->
+      <div class="toolbar-cluster" id="cluster-right">
         <button id="btn-color" class="color-btn" title="Text color" aria-haspopup="true">
           <span class="color-btn-a">A</span><span id="color-swatch-bar"></span>
         </button>
-      </div>
-
-      <!-- Right: font size + search + sidebar toggle + close -->
-      <div class="toolbar-cluster" id="cluster-right">
         <input id="font-size" type="number" value="14" min="8" max="72"
                title="Font size" aria-label="Font size" />
         <button id="btn-search" class="icon-btn" title="Find in note (Ctrl+F)">
@@ -140,6 +140,18 @@
     <!-- ── Status bar ─────────────────────────────────────────────────────── -->
     <div id="status-bar">
       <span id="status-text" title="Click or press Ctrl+Alt+T to toggle Always on Top">● Always on Top</span>
+    </div>
+
+    <!-- ── Delete confirmation ─────────────────────────────────────────────── -->
+    <div id="confirm-overlay" aria-hidden="true">
+      <div id="confirm-box" role="alertdialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+        <div id="confirm-title">Delete this note?</div>
+        <div id="confirm-text"></div>
+        <div id="confirm-actions">
+          <button id="confirm-cancel" class="confirm-btn">Cancel</button>
+          <button id="confirm-ok" class="confirm-btn confirm-danger">Delete</button>
+        </div>
+      </div>
     </div>
 
   </div><!-- /app -->
