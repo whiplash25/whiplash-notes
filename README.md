@@ -17,6 +17,7 @@ Grab the latest `.exe` from the [Releases](../../releases) page. No installation
 - **Always on Top** — floats above every other window, including video players. Click the status text in the bottom-right corner, or press `Ctrl+Alt+T` from anywhere (even when another app is focused), to toggle it on/off.
 - **Frameless dark UI** — deep charcoal background, rounded corners, no distracting title bar.
 - **Rich text formatting** — Bold, Italic, Underline, and Strikethrough via toolbar buttons or `Ctrl+B / I / U`.
+- **Lists & indentation** — type `- ` for a bullet list, `1. ` for a numbered list, or `[] ` for a checklist (click a box to tick it). `Enter` continues the list, `Enter` on an empty item ends it, `Tab` / `Shift+Tab` indent / outdent by 8 spaces. Shortcuts: `Ctrl+Shift+8` bullets, `Ctrl+Shift+7` numbered, `Ctrl+Shift+9` checklist (also in the right-click menu). Saved as plain Markdown (`- item`, `- [ ] task`).
 - **Adjustable font size** — change it on the fly from the toolbar.
 - **Notes sidebar** — click the ≡ button to see all your saved notes and switch between them.
 - **Auto-save** — every keystroke is saved automatically after a short pause. No manual saving ever.

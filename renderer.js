@@ -558,11 +558,22 @@ function editorToText() {
 
   editor.childNodes.forEach(walk);
 
-  return parts
-    .join('')
-    .replace(/^\n+/, '')      // strip leading newlines
-    .replace(/\n{3,}/g, '\n\n') // collapse excessive blank lines
-    .trim();
+  return listsToMarkdown(
+    parts
+      .join('')
+      .replace(/ /g, ' ')      // editors sometimes insert non-breaking spaces
+      .replace(/^\n+/, '')          // strip leading newlines
+      .replace(/\n{3,}/g, '\n\n')   // collapse excessive blank lines
+      .replace(/\n+$/, '')          // trailing newlines only: keep indentation and an empty list item's marker
+  );
+}
+
+/** "• " / "☐ " / "☑ " at line start → "- " / "- [ ] " / "- [x] " (code fences untouched). */
+function listsToMarkdown(text) {
+  return text.split(/(```[\s\S]*?```)/g).map((part, i) => i % 2 ? part : part
+    .replace(/^( *)• /gm, '$1- ')
+    .replace(/^( *)☐ /gm, '$1- [ ] ')
+    .replace(/^( *)☑ /gm, '$1- [x] ')).join('');
 }
 
 // ── Format conversion (used for loading notes from disk) ─────────────────────
@@ -581,6 +592,11 @@ function inlineToHtml(text) {
     imgSlots.push(src);
     return `\x00img${i}\x00`;
   });
+
+  // List markers: "- [ ] " / "- [x] " / "- " at line start → ☐ / ☑ / •
+  text = text
+    .replace(/^( *)- \[( |x)\] /gm, (_, ind, c) => ind + (c === 'x' ? '☑' : '☐') + ' ')
+    .replace(/^( *)- /gm, '$1• ');
 
   let html = text
     .replace(/&/g, '&amp;')
@@ -655,6 +671,7 @@ function filenameToDate(filename) {
 /** First non-empty line of plain text, stripped of markdown markers */
 function firstLine(text) {
   return (text.split('\n').find(l => l.trim() && !l.trim().startsWith('```')) || '(empty)')
+    .replace(/^\s*(?:- \[[ xX]\] |- |\d+\. )/, '')
     .replace(/\{#[0-9a-fA-F]{6}\|([^{}]*)\}/g, '$1')
     .replace(/[*_~`]/g, '')
     .trim();
@@ -664,7 +681,7 @@ function firstLine(text) {
 function secondLine(text) {
   const lines = text.split('\n').filter(l => l.trim() && !l.trim().startsWith('```'));
   if (lines.length < 2) return '';
-  return lines[1].replace(/\{#[0-9a-fA-F]{6}\|([^{}]*)\}/g, '$1').replace(/[*_~`]/g, '').trim();
+  return lines[1].replace(/^\s*(?:- \[[ xX]\] |- |\d+\. )/, '').replace(/\{#[0-9a-fA-F]{6}\|([^{}]*)\}/g, '$1').replace(/[*_~`]/g, '').trim();
 }
 
 function flashStatus(msg, ms = 1400) {
@@ -1583,6 +1600,257 @@ const codeBlockObserver = new MutationObserver(() => {
 });
 codeBlockObserver.observe(editor, { childList: true });
 
+// ── Lists & indentation ───────────────────────────────────────────────────────
+// Lists are plain text lines inside the editor:  "• item", "1. item", "☐ item" / "☑ item",
+// each optionally indented by multiples of 8 spaces. On disk they are stored as markdown
+// ("- item", "1. item", "- [ ] item" / "- [x] item") — see listsToMarkdown / inlineToHtml.
+// Line-level edits use the Selection API (paragraph boundaries) so they work regardless of
+// whether lines are <br>-separated or <div>-wrapped.
+const INDENT  = '        ';                       // Tab = 8 spaces
+const LIST_RE = /^( *)(• |☐ |☑ |\d+\. )/;
+
+const caretSel = () => window.getSelection();
+
+/** Number of characters between the start of the caret's line and the caret. */
+function lineColumn() {
+  const sel = caretSel();
+  sel.modify('extend', 'backward', 'paragraphboundary');
+  const n = sel.toString().length;
+  sel.collapseToEnd();                            // back to the caret
+  return n;
+}
+
+/** Text of the caret's line, split at the caret. */
+function lineParts() {
+  const sel = caretSel();
+  sel.modify('extend', 'backward', 'paragraphboundary');
+  const before = sel.toString();
+  sel.collapseToEnd();
+  sel.modify('extend', 'forward', 'paragraphboundary');
+  const after = sel.toString().replace(/\n+$/, '');
+  sel.collapseToStart();
+  return { before, after };
+}
+
+function moveCaret(n, extend = false) {
+  const sel = caretSel();
+  const dir = n < 0 ? 'backward' : 'forward';
+  for (let i = 0; i < Math.abs(n); i++) sel.modify(extend ? 'extend' : 'move', dir, 'character');
+}
+
+function setLineColumn(target) { moveCaret(target - lineColumn()); }
+
+/** Replace `len` chars starting `from` chars into the caret's line with `text`. Caret ends after it. */
+function replaceInLine(from, len, text) {
+  moveCaret(-lineColumn());
+  moveCaret(from);
+  if (len) moveCaret(len, true);
+  if (text) document.execCommand('insertText', false, text);
+  else if (len) document.execCommand('delete');
+}
+
+function inEditorCaret() {
+  const sel = caretSel();
+  return sel && sel.rangeCount > 0 && editor.contains(sel.anchorNode);
+}
+
+function indentLine() {
+  const { before, after } = lineParts();
+  if (LIST_RE.test(before + after)) {
+    replaceInLine(0, 0, INDENT);
+    setLineColumn(before.length + INDENT.length);
+  } else {
+    document.execCommand('insertText', false, INDENT);
+  }
+}
+
+function outdentLine() {
+  const { before, after } = lineParts();
+  const remove = Math.min(INDENT.length, (before + after).match(/^ */)[0].length);
+  if (!remove) return;
+  replaceInLine(0, remove, '');
+  setLineColumn(Math.max(0, before.length - remove));
+}
+
+const LIST_KINDS = {
+  bullet: { marker: '• ',  is: m => m === '• ' },
+  number: { marker: '1. ', is: m => /^\d+\. $/.test(m) },
+  check:  { marker: '☐ ',  is: m => m === '☐ ' || m === '☑ ' },
+};
+
+/** Add / switch / remove a list marker on the caret's line. */
+function toggleListMarker(kind) {
+  if (!inEditorCaret()) return;
+  const sel = caretSel();
+  if (!sel.isCollapsed) sel.collapseToStart();
+  const { before, after } = lineParts();
+  const text   = before + after;
+  const indent = text.match(/^ */)[0].length;
+  const cur    = (text.match(LIST_RE) || [])[2] || '';
+  const next   = cur && LIST_KINDS[kind].is(cur) ? '' : LIST_KINDS[kind].marker;
+  replaceInLine(indent, cur.length, next);
+  const col = before.length;
+  setLineColumn(col >= indent + cur.length ? col + next.length - cur.length : indent + next.length);
+  scheduleSave();
+}
+
+/** True if the line above the caret's line is a list item. */
+function previousLineIsList() {
+  const sel = caretSel();
+  const col = lineColumn();
+  sel.modify('extend', 'backward', 'paragraphboundary');   // to start of this line
+  sel.modify('extend', 'backward', 'character');           // across the line break
+  sel.modify('extend', 'backward', 'paragraphboundary');   // to start of the line above
+  const t = sel.toString();
+  sel.collapseToEnd();                                     // back to the caret
+  return LIST_RE.test(t.slice(0, Math.max(0, t.length - col)).replace(/\n+$/, ''));
+}
+
+function handleListKeydown(e) {
+  if (e.defaultPrevented || e.isComposing) return;
+  if (e.target.closest && e.target.closest('.code-block')) return;
+
+  // Ctrl+Shift+8 bullets, +7 numbered, +9 checklist (same as Google Docs)
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+    const kind = { Digit8: 'bullet', Digit7: 'number', Digit9: 'check' }[e.code];
+    if (kind) { e.preventDefault(); toggleListMarker(kind); }
+    return;
+  }
+  if (e.ctrlKey || e.metaKey || e.altKey || !inEditorCaret()) return;
+  const sel = caretSel();
+
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    if (!sel.isCollapsed) return;                 // never overwrite a selection with spaces
+    if (e.shiftKey) outdentLine(); else indentLine();
+    scheduleSave();
+    return;
+  }
+  if (!sel.isCollapsed) return;
+
+  const { before, after } = lineParts();
+
+  // "-␠" → bullet,  "[]␠" / "[ ]␠" / "[x]␠" (optionally after a bullet) → checkbox
+  if (e.key === ' ' && after === '') {
+    let m = before.match(/^( *)[-*+]$/);
+    if (m) {
+      e.preventDefault();
+      replaceInLine(m[1].length, 1, '• ');
+      return;
+    }
+    m = before.match(/^( *)(?:• )?\[( |x|X)?\]$/);
+    if (m) {
+      e.preventDefault();
+      replaceInLine(m[1].length, before.length - m[1].length, (m[2] || '').toLowerCase() === 'x' ? '☑ ' : '☐ ');
+      return;
+    }
+    return;
+  }
+
+  // "1." + Enter (before typing the space) → "1. " then "2. "
+  const numStart = e.key === 'Enter' && !e.shiftKey && after === '' && before.match(/^( *)(\d+)\.$/);
+  if (numStart) {
+    e.preventDefault();
+    replaceInLine(numStart[1].length, numStart[2].length + 1, numStart[2] + '. ');
+    document.execCommand('insertParagraph');
+    document.execCommand('insertText', false, numStart[1] + (parseInt(numStart[2], 10) + 1) + '. ');
+    scheduleSave();
+    return;
+  }
+
+  // Backspace inside a run of spaces removes a whole tab: back to the previous 8-space
+  // stop in the indentation, or one full tab (8 spaces) elsewhere on the line.
+  if (e.key === 'Backspace') {
+    const run = before.match(/ *$/)[0].length;
+    const n = /^ +$/.test(before) ? (run % INDENT.length || INDENT.length)
+            : (run >= INDENT.length ? INDENT.length : 0);
+    if (n > 1) {
+      e.preventDefault();
+      moveCaret(-n, true);
+      document.execCommand('delete');
+      scheduleSave();
+      return;
+    }
+  }
+
+  const lm = (before + after).match(LIST_RE);
+  if (!lm) return;
+  const markerEnd = lm[0].length;
+
+  // Enter: continue the list; Enter on an empty item leaves the list (or outdents)
+  if (e.key === 'Enter' && !e.shiftKey && before.length >= markerEnd) {
+    e.preventDefault();
+    const emptyItem = !(before + after).slice(markerEnd).trim();
+    // An empty item leaves the list — except the first "1. " of a numbered list, where Enter should give "2. ".
+    if (emptyItem && !(/^\d+\. $/.test(lm[2]) && !previousLineIsList())) {
+      if (lm[1].length) { outdentLine(); }
+      else { replaceInLine(0, markerEnd, ''); }
+      scheduleSave();
+      return;
+    }
+    const marker = lm[2];
+    const next = /^\d+\. $/.test(marker) ? `${parseInt(marker, 10) + 1}. `
+               : marker === '• ' ? '• ' : '☐ ';
+    document.execCommand('insertParagraph');
+    document.execCommand('insertText', false, lm[1] + next);
+    scheduleSave();
+    return;
+  }
+
+  // Backspace right after a marker removes the marker (or outdents a nested item)
+  if (e.key === 'Backspace' && before.length === markerEnd) {
+    e.preventDefault();
+    if (lm[1].length) { outdentLine(); }
+    else { replaceInLine(0, markerEnd, ''); }
+    scheduleSave();
+  }
+}
+editor.addEventListener('keydown', handleListKeydown);
+
+// Toolbar buttons: bullet / numbered / checklist on the current line
+document.querySelectorAll('.list-btn').forEach(btn => {
+  btn.addEventListener('mousedown', e => e.preventDefault());   // keep the caret in the editor
+  btn.addEventListener('click', () => {
+    editor.focus();
+    if (!inEditorCaret()) {                                     // no caret yet: start at the end of the note
+      const r = document.createRange();
+      r.selectNodeContents(editor);
+      r.collapse(false);
+      caretSel().removeAllRanges();
+      caretSel().addRange(r);
+    }
+    toggleListMarker(btn.dataset.list);
+  });
+});
+
+// Click a ☐ / ☑ to toggle it
+editor.addEventListener('click', e => {
+  if (!inEditorCaret()) return;
+  const sel = caretSel();
+  if (!sel.isCollapsed || e.target.closest('.code-block')) return;
+  const { before, after } = lineParts();
+  const range = sel.getRangeAt(0).cloneRange();
+  const node = range.startContainer, offset = range.startOffset;
+  if (node.nodeType !== Node.TEXT_NODE) return;
+
+  let glyphStart = -1;                             // offset of the checkbox char inside `node`
+  if (/^ *$/.test(before) && /^[☐☑]/.test(after) && offset < node.nodeValue.length) glyphStart = offset;
+  else if (/^ *[☐☑]$/.test(before) && offset > 0) glyphStart = offset - 1;
+  if (glyphStart < 0 || !/[☐☑]/.test(node.nodeValue[glyphStart] || '')) return;
+
+  const g = document.createRange();
+  g.setStart(node, glyphStart);
+  g.setEnd(node, glyphStart + 1);
+  const r = g.getBoundingClientRect();
+  if (e.clientX < r.left - 2 || e.clientX > r.right + 2 || e.clientY < r.top - 2 || e.clientY > r.bottom + 2) return;
+
+  const col = before.length;
+  const indent = (before + after).match(/^ */)[0].length;
+  replaceInLine(indent, 1, node.nodeValue[glyphStart] === '☐' ? '☑' : '☐');
+  setLineColumn(col);
+  scheduleSave();
+});
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 async function init() {
   allNotes = await window.notesAPI.loadAll();  // newest first
@@ -1683,6 +1951,12 @@ init();
   });
 
   // Text color row — applies to the selection, or sets the color for typing.
+  // List row — toggles a bullet / numbered / checkbox marker on the current line.
+  document.querySelectorAll('.ctx-list-btn').forEach(btn => {
+    btn.addEventListener('mousedown', e => e.preventDefault()); // keep caret
+    btn.addEventListener('click', () => { editor.focus(); toggleListMarker(btn.dataset.list); closeMenu(); });
+  });
+
   document.querySelectorAll('.ctx-col-btn').forEach(btn => {
     btn.addEventListener('mousedown', e => e.preventDefault()); // keep selection
     btn.addEventListener('click', () => { applyTextColor(btn.dataset.color); closeMenu(); });

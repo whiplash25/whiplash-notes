@@ -164,7 +164,7 @@ html, body {
   background: rgba(255,255,255,0.06); border-radius: var(--radius-pill);
   padding: 2px; gap: 1px;
 }
-.fmt-btn {
+.fmt-btn, .list-btn {
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 26px;
   background: transparent; border: none; border-radius: 4px;
@@ -173,7 +173,9 @@ html, body {
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
-.fmt-btn:hover  { background: var(--bg-pill-hover); color: var(--text); }
+.fmt-btn:hover, .list-btn:hover { background: var(--bg-pill-hover); color: var(--text); }
+.list-btn:active { background: var(--secondary-container); color: var(--on-secondary-container); }
+.fmt-divider { width: 1px; height: 16px; margin: 0 3px; background: var(--border); flex-shrink: 0; }
 .fmt-btn:active, .fmt-btn.active { background: var(--secondary-container); color: var(--on-secondary-container); }
 .fmt-btn b  { font-weight: 700; }
 .fmt-btn i  { font-style: italic; }
@@ -615,7 +617,7 @@ span.user-highlight {
   padding:         6px 10px 8px;
 }
 
-.ctx-fmt-btn {
+.ctx-fmt-btn, .ctx-list-btn {
   width:         32px;
   height:        28px;
   background:    var(--surface-variant);
@@ -631,6 +633,7 @@ span.user-highlight {
   align-items:   center;
   justify-content: center;
 }
+.ctx-list-btn:hover { background: var(--bg-pill-hover); color: var(--text); }
 .ctx-fmt-btn:hover           { background: var(--bg-pill-hover); color: var(--text); }
 .ctx-fmt-btn.active          { background: var(--secondary-container); color: var(--on-secondary-container); }
 .ctx-fmt-btn:disabled        { opacity: 0.35; cursor: default; }
@@ -796,3 +799,9 @@ span.user-highlight {
 .confirm-btn:focus-visible { outline: 2px solid var(--secondary); outline-offset: 1px; }
 .confirm-danger        { background: var(--error); color: var(--on-error); }
 .confirm-danger:hover  { background: #ee6a77; }
+
+/* The toolbar has no room for the list buttons in a narrow window; the Ctrl+Shift+7/8/9
+   shortcuts and the right-click List row still work. */
+@media (max-width: 579px) {
+  .fmt-divider, .list-btn { display: none; }
+}

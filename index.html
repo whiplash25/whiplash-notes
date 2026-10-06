@@ -36,6 +36,10 @@
         <button class="fmt-btn" data-cmd="italic"        title="Italic (Ctrl+I)"><i>I</i></button>
         <button class="fmt-btn" data-cmd="underline"     title="Underline (Ctrl+U)"><u>U</u></button>
         <button class="fmt-btn" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+        <span class="fmt-divider" aria-hidden="true"></span>
+        <button class="list-btn" data-list="bullet" title="Bullet list (Ctrl+Shift+8)">•</button>
+        <button class="list-btn" data-list="number" title="Numbered list (Ctrl+Shift+7)">1.</button>
+        <button class="list-btn" data-list="check"  title="Checklist (Ctrl+Shift+9)">☐</button>
       </div>
 
       <!-- Right: text color + font size + search + sidebar toggle + close -->
@@ -163,6 +167,13 @@
       <button class="ctx-fmt-btn" data-cmd="italic"        title="Italic"><i>I</i></button>
       <button class="ctx-fmt-btn" data-cmd="underline"     title="Underline"><u>U</u></button>
       <button class="ctx-fmt-btn" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+    </div>
+    <div class="ctx-divider"></div>
+    <div id="ctx-list-row" class="ctx-highlight-row">
+      <span class="ctx-highlight-label">List</span>
+      <button class="ctx-list-btn" data-list="bullet" title="Bullet list (Ctrl+Shift+8)">•</button>
+      <button class="ctx-list-btn" data-list="number" title="Numbered list (Ctrl+Shift+7)">1.</button>
+      <button class="ctx-list-btn" data-list="check"  title="Checklist (Ctrl+Shift+9)">☐</button>
     </div>
     <div class="ctx-divider"></div>
     <div id="ctx-highlight-row" class="ctx-highlight-row">
