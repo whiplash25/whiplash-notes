@@ -1868,8 +1868,8 @@ async function init() {
   ensureTab(currentFilename);
   renderTabs();
 
-  // Always-on-top starts ON
-  setAotLabel(true);
+  // Always-on-top starts OFF (floating off); reflect whatever the main process reports
+  setAotLabel(await window.notesAPI.isAlwaysOnTop());
 
   editor.focus();
   // Move caret to end

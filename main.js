@@ -53,7 +53,7 @@ function createWindow() {
     frame:          false,
     transparent:    true,
     roundedCorners: true,
-    alwaysOnTop:    true,
+    alwaysOnTop:    false,  // floating starts OFF; toggle with Ctrl+Alt+T or the status bar
     resizable:      true,
     hasShadow:      true,
     show:           false,  // don't show until content is painted
@@ -66,7 +66,6 @@ function createWindow() {
     },
   });
 
-  mainWindow.setAlwaysOnTop(true, 'screen-saver');
   mainWindow.loadFile('index.html');
 
   // Show as soon as the renderer has painted — avoids white/blank flash
@@ -121,6 +120,7 @@ function toggleAlwaysOnTop() {
 }
 
 ipcMain.handle('window:toggleAlwaysOnTop', toggleAlwaysOnTop);
+ipcMain.handle('window:isAlwaysOnTop', () => !!mainWindow && !mainWindow.isDestroyed() && mainWindow.isAlwaysOnTop());
 
 // Close the window
 ipcMain.handle('window:close', () => {
